@@ -1,0 +1,30 @@
+Test Bench Results:
+
+Number of runs per algorithm and matrix size: 10
+
+Matrix Size: 32x32
+  Strassen : Mean: 134.882µs, StdDev: 0.000001, GeometricMean: 0.000135
+  Recursive: Mean: 7.68439ms, StdDev: 0.000253, GeometricMean: 0.007680
+  Classical: Mean: 133.156µs, StdDev: 0.000001, GeometricMean: 0.000133
+
+Matrix Size: 64x64
+  Strassen : Mean: 1.165626ms, StdDev: 0.000139, GeometricMean: 0.001159
+  Recursive: Mean: 63.013736ms, StdDev: 0.003900, GeometricMean: 0.062898
+  Classical: Mean: 1.166911ms, StdDev: 0.000140, GeometricMean: 0.001160
+
+// Strassen heading for the win
+
+Matrix Size: 128x128
+  Strassen : Mean: 8.190938ms, StdDev: 0.000221, GeometricMean: 0.008188
+  Recursive: Mean: 518.473444ms, StdDev: 0.046116, GeometricMean: 0.516511
+  Classical: Mean: 9.244364ms, StdDev: 0.000455, GeometricMean: 0.009233
+
+Matrix Size: 256x256
+  Strassen : Mean: 60.398901ms, StdDev: 0.001978, GeometricMean: 0.060367
+  Recursive: Mean: 4.287075922s, StdDev: 0.430450, GeometricMean: 4.266910
+  Classical: Mean: 74.798556ms, StdDev: 0.002047, GeometricMean: 0.074771
+
+Matrix Size: 512x512
+  Strassen : Mean: 426.367343ms, StdDev: 0.006914, GeometricMean: 0.426312
+  Recursive: Mean: 33.511697052s, StdDev: 1.104362, GeometricMean: 33.493683
+  Classical: Mean: 685.193372ms, StdDev: 0.053978, GeometricMean: 0.683057
