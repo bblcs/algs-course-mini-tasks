@@ -1,0 +1,11 @@
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 4
+AccessModifierOffset: -4
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Always
+AllowShortLoopsOnASingleLine: true
+DerivePointerAlignment: false
+PointerAlignment: Left
