@@ -1,1 +1,4 @@
 task_8/target/*
+.scala-build
+.bsp
+.metals
