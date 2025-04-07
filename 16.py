@@ -168,13 +168,56 @@ def infix_to_rpn(expression):
     return output_queue
 
 
-while True:
-    expression = input("> ")
-    if expression == "q":
-        break
+if __name__ == "__main__":
+    while True:
+        expression = input("> ")
+        if expression == "q":
+            break
 
-    try:
-        rpn_expression = infix_to_rpn(expression)
-        print(" ".join(rpn_expression))
-    except ValueError as e:
-        print("Error:", e)
+        try:
+            rpn_expression = infix_to_rpn(expression)
+            print(" ".join(rpn_expression))
+        except ValueError as e:
+            print("Error:", e)
+
+
+def test_simple_addition():
+    expression = "3 + 4"
+    expected = ["3", "4", "+"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_precedence():
+    expression = "3 + 4 * 2"
+    expected = ["3", "4", "2", "*", "+"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_left_associativity():
+    expression = "10 - 4 - 3"
+    expected = ["10", "4", "-", "3", "-"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_right_associativity():
+    expression = "2 ** 3 ** 2"
+    expected = ["2", "3", "2", "**", "**"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_parentheses_override_precedence():
+    expression = "(3 + 4) * 2"
+    expected = ["3", "4", "+", "2", "*"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_nested_parentheses():
+    expression = "((1 + 2) * 3) - 4"
+    expected = ["1", "2", "+", "3", "*", "4", "-"]
+    assert infix_to_rpn(expression), expected
+
+
+def test_whitespace_handling():
+    expression = "  5  *  ( 6 +  2 ) / 4 "
+    expected = ["5", "6", "2", "+", "*", "4", "/"]
+    assert infix_to_rpn(expression), expected
