@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/task_33
+task_33.so
+task_33.dylib
+task_33.dll
+task_33.a
+task_33.lib
+task_33-test-*
+*.exe
+*.o
+*.obj
+*.lst
