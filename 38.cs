@@ -2,12 +2,11 @@
 
 public class Solution {
     public int FindTheCity(int n, int[][] edges, int distanceThreshold) {
-        int inf = 10000001;
         var dist = new int[n, n];
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                dist[i, j] = (i == j) ? 0 : inf;
+                dist[i, j] = (i == j) ? 0 : Int32.MaxValue;
             }
         }
 
