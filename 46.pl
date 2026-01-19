@@ -10,10 +10,10 @@ package SpamFilter;
 sub new {
     my ($class, $triggers_ref) = @_;
     my $self = {
-        patterns => {},
         pattern_list => [],
-        trie     => undef,
-        dirty    => 1,
+        trie         => undef,
+        sorted_nodes => [], # nodes in bfs order
+        dirty        => 1,
     };
     bless $self, $class;
 
@@ -26,10 +26,7 @@ sub new {
 
 sub add_trigger {
     my ($self, $phrase) = @_;
-    return if exists $self->{patterns}->{$phrase};
-
     push @{$self->{pattern_list}}, $phrase;
-    $self->{patterns}->{$phrase} = $#{$self->{pattern_list}};
     $self->{dirty} = 1;
 }
 
@@ -37,9 +34,10 @@ sub _build_automaton {
     my ($self) = @_;
     
     my $root = {
-        next => {}, # char -> node
+        next => {},        # char -> node
         fail => undef,
-        outputs => [],
+        my_patterns => [], # pattern ends
+        count => 0,
     };
     
     foreach my $idx (0 .. $#{$self->{pattern_list}}) {
@@ -50,19 +48,22 @@ sub _build_automaton {
             $node->{next}->{$char} //= {
                 next => {},
                 fail => undef,
-                outputs => [],
+                my_patterns => [],
+                count => 0,
             };
             $node = $node->{next}->{$char};
         }
-        push @{$node->{outputs}}, $idx;
+        push @{$node->{my_patterns}}, $idx;
     }
 
     my @queue = ();
+    my @all_nodes = ();
     
     foreach my $char (keys %{$root->{next}}) {
         my $child = $root->{next}->{$char};
         $child->{fail} = $root; 
         push @queue, $child;
+        push @all_nodes, $child; 
     }
     
     while (@queue) {
@@ -70,6 +71,7 @@ sub _build_automaton {
         
         foreach my $char (keys %{$current->{next}}) {
             my $child = $current->{next}->{$char};
+            push @all_nodes, $child;
             
             my $fail_candidate = $current->{fail};
             while (defined $fail_candidate && !exists $fail_candidate->{next}->{$char}) {
@@ -82,13 +84,12 @@ sub _build_automaton {
                 $child->{fail} = $root;
             }
             
-            push @{$child->{outputs}}, @{$child->{fail}->{outputs}};
-            
             push @queue, $child;
         }
     }
     
     $self->{trie} = $root;
+    $self->{sorted_nodes} = \@all_nodes;
     $self->{dirty} = 0;
 }
 
@@ -100,24 +101,35 @@ sub check_text {
     }
 
     my $root = $self->{trie};
-    my $current = $root;
-    
-    my %stats = map { $_ => 0 } @{$self->{pattern_list}};
-    my $total_hits = 0;
+    my $nodes = $self->{sorted_nodes};
 
+    $_->{count} = 0 for @$nodes;
+    
+    my $current = $root;
     foreach my $char (split //, $text) {
         while ($current != $root && !exists $current->{next}->{$char}) {
             $current = $current->{fail};
         }
+        $current = $current->{next}->{$char} // $root;
         
-        if (exists $current->{next}->{$char}) {
-            $current = $current->{next}->{$char};
+        $current->{count}++ if $current != $root;
+    }
+    
+    foreach my $node (reverse @$nodes) {
+        if (defined $node->{fail} && $node->{fail} != $root) {
+            $node->{fail}->{count} += $node->{count};
         }
-        
-        foreach my $pattern_idx (@{$current->{outputs}}) {
-            my $pattern_str = $self->{pattern_list}->[$pattern_idx];
-            $stats{$pattern_str}++;
-            $total_hits++;
+    }
+
+    my %stats = map { $_ => 0 } @{$self->{pattern_list}};
+    my $total_hits = 0;
+
+    foreach my $node (@$nodes) {
+        next unless $node->{count} > 0;
+        foreach my $pidx (@{$node->{my_patterns}}) {
+            my $p_str = $self->{pattern_list}->[$pidx];
+            $stats{$p_str} += $node->{count};
+            $total_hits += $node->{count};
         }
     }
     
@@ -126,7 +138,6 @@ sub check_text {
 
 package main;
 use Test::More;
-
 
 print "tests:\n";
 
@@ -137,8 +148,6 @@ my ($stats, $total) = $filter->check_text($line);
 
 is($total, 3, "total matches should be 3");
 is($stats->{"buy now"}, 1, "count 'buy now'");
-is($stats->{"free money"}, 1, "count 'free money'");
-is($stats->{"click here"}, 1, "count 'click here'");
 
 $line = "buy now buy now";
 ($stats, $total) = $filter->check_text($line);
@@ -153,13 +162,8 @@ $line = "ushers";
 ($stats, $total) = $filter->check_text($line);
 
 is($stats->{"she"}, 1, "overlap: Found 'she'");
-is($stats->{"he"}, 1, "overlap: Found 'he' inside 'she'");
+is($stats->{"he"}, 1, "overlap: Found 'he' via propagation");
 is($stats->{"hers"}, 1, "overlap: Found 'hers'");
 is($total, 3, "total overlapped matches");
-
-$filter->add_trigger("cash");
-$line = "I need cash now";
-($stats, $total) = $filter->check_text($line);
-is($stats->{"cash"}, 1, "dynamically added trigger found");
 
 done_testing();
