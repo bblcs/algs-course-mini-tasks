@@ -19,14 +19,35 @@ ScheduleResult quiteOptimal(Task[] tasks)
 {
 	auto scheduleSize = tasks.map!(t => t.deadline).maxElement;
 	auto parent = iota(scheduleSize).array;
+	auto sizes = new int[scheduleSize];
+	sizes[] = 1;
+	auto low = iota(scheduleSize).array;
 
-	auto find(int i)
+	int find(int i)
 	{
-		if (i < 0)
-			return -1;
-		if (parent[i] != i)
-			parent[i] = find(parent[i]);
+		if (parent[i] == i)
+		{
+			return i;
+		}
+		parent[i] = find(parent[i]);
 		return parent[i];
+	}
+
+	void unite(int i, int j)
+	{
+		i = find(i);
+		j = find(j);
+
+		if (i != j)
+		{
+			if (sizes[i] < sizes[j])
+			{
+				swap(i, j);
+			}
+			parent[j] = i;
+			sizes[i] += sizes[j];
+			low[i] = min(low[i], low[j]);
+		}
 	}
 
 	auto finalSchedule = new Task[scheduleSize];
@@ -34,7 +55,7 @@ ScheduleResult quiteOptimal(Task[] tasks)
 
 	foreach (task; tasks)
 	{
-		auto availableDay = find(task.deadline - 1);
+		int availableDay = low[task.deadline - 1];
 
 		if (availableDay == -1)
 		{
@@ -43,7 +64,15 @@ ScheduleResult quiteOptimal(Task[] tasks)
 		else
 		{
 			finalSchedule[availableDay] = task;
-			parent[availableDay] = find(availableDay - 1);
+			
+			if (availableDay > 0)
+			{
+				unite(availableDay, availableDay - 1);
+			}
+			else
+			{
+				low[find(0)] = -1;
+			}
 		}
 	}
 	return ScheduleResult(finalSchedule, totalPenalty);
